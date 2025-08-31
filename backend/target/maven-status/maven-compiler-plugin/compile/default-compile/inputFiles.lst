@@ -1,0 +1,13 @@
+/app/backend/src/main/java/com/w3c/credentials/dto/VerificationResult.java
+/app/backend/src/main/java/com/w3c/credentials/controller/HealthController.java
+/app/backend/src/main/java/com/w3c/credentials/config/OpenApiConfig.java
+/app/backend/src/main/java/com/w3c/credentials/service/CredentialIssuerService.java
+/app/backend/src/main/java/com/w3c/credentials/service/CredentialVerifierService.java
+/app/backend/src/main/java/com/w3c/credentials/repository/VerifiableCredentialRepository.java
+/app/backend/src/main/java/com/w3c/credentials/model/CredentialSubject.java
+/app/backend/src/main/java/com/w3c/credentials/controller/CredentialsController.java
+/app/backend/src/main/java/com/w3c/credentials/model/Proof.java
+/app/backend/src/main/java/com/w3c/credentials/VerifiableCredentialsApplication.java
+/app/backend/src/main/java/com/w3c/credentials/dto/IssueCredentialRequest.java
+/app/backend/src/main/java/com/w3c/credentials/dto/IssuerObject.java
+/app/backend/src/main/java/com/w3c/credentials/model/VerifiableCredential.java
