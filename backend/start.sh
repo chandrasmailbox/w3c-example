@@ -3,7 +3,7 @@
 
 # Set Java home if not set
 if [ -z "$JAVA_HOME" ]; then
-    export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+    export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-arm64"
 fi
 
 # Add Java to PATH
