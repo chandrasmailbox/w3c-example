@@ -1,15 +1,36 @@
 #!/usr/bin/env python3
 """
-Wrapper script to start the Spring Boot Gradle application.
-This exists to maintain compatibility with the existing supervisor configuration.
+FastAPI wrapper that starts the Spring Boot application in the background.
+This maintains compatibility with the existing supervisor uvicorn configuration.
 """
 import subprocess
 import os
-import sys
-import signal
+import threading
 import time
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import httpx
+import uvicorn
 
-def main():
+# Initialize the FastAPI app
+app = FastAPI(title="W3C Verifiable Credentials Proxy", version="1.0.0")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Global variable to track the Spring Boot process
+spring_boot_process = None
+
+def start_spring_boot():
+    """Start the Spring Boot application in the background."""
+    global spring_boot_process
+    
     # Change to backend directory
     os.chdir('/app/backend')
     
@@ -21,33 +42,64 @@ def main():
     os.environ['PATH'] = f"{os.environ['JAVA_HOME']}/bin:{os.environ.get('PATH', '')}"
     
     print("Starting Spring Boot W3C Verifiable Credentials Backend...")
-    print(f"Java Version: {subprocess.run(['java', '-version'], capture_output=True, text=True).stderr.split()[2]}")
-    print(f"Working Directory: {os.getcwd()}")
     
     # Build if necessary
     jar_path = 'build/libs/verifiable-credentials-backend-0.0.1-SNAPSHOT.jar'
     if not os.path.exists(jar_path):
         print("Building Spring Boot application with Gradle...")
-        build_process = subprocess.run(['./gradlew', 'clean', 'build', '-x', 'test'], check=True)
+        subprocess.run(['./gradlew', 'clean', 'build', '-x', 'test'], check=True)
     
-    # Start the Spring Boot application
-    java_process = subprocess.Popen(['java', '-jar', jar_path])
+    # Start the Spring Boot application on port 8002 (to avoid conflict)
+    spring_boot_process = subprocess.Popen([
+        'java', '-jar', jar_path, '--server.port=8002'
+    ])
     
-    # Handle shutdown gracefully
-    def signal_handler(signum, frame):
-        print(f"Received signal {signum}, terminating Spring Boot application...")
-        java_process.terminate()
-        java_process.wait()
-        sys.exit(0)
-    
-    signal.signal(signal.SIGTERM, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
-    
-    try:
-        java_process.wait()
-    except KeyboardInterrupt:
-        java_process.terminate()
-        java_process.wait()
+    # Wait a bit for Spring Boot to start
+    time.sleep(10)
 
-if __name__ == '__main__':
-    main()
+# Start Spring Boot when the module is imported
+threading.Thread(target=start_spring_boot, daemon=True).start()
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "service": "W3C Verifiable Credentials Proxy"}
+
+@app.post("/api/issue")
+async def issue_credential(request_data: dict):
+    """Proxy request to Spring Boot issue endpoint."""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                "http://localhost:8002/api/issue",
+                json=request_data,
+                timeout=30.0
+            )
+            return response.json()
+        except Exception as e:
+            return {"error": f"Failed to connect to Spring Boot backend: {str(e)}"}
+
+@app.post("/api/verify")
+async def verify_credential(request_data: dict):
+    """Proxy request to Spring Boot verify endpoint."""
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                "http://localhost:8002/api/verify",
+                json=request_data,
+                timeout=30.0
+            )
+            return response.json()
+        except Exception as e:
+            return {"error": f"Failed to connect to Spring Boot backend: {str(e)}"}
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Gracefully shutdown Spring Boot when FastAPI shuts down."""
+    global spring_boot_process
+    if spring_boot_process:
+        spring_boot_process.terminate()
+        spring_boot_process.wait()
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8001)
