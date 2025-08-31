@@ -1,6 +1,6 @@
 package com.w3c.credentials.model;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
 public class Proof {
