@@ -1,6 +1,6 @@
 package com.w3c.credentials.dto;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 public class IssueCredentialRequest {
     
