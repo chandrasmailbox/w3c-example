@@ -12,10 +12,10 @@ export PATH="$JAVA_HOME/bin:$PATH"
 # Set working directory
 cd /app/backend
 
-# Install Maven if needed and build the application
-if [ ! -f "target/verifiable-credentials-backend-0.0.1-SNAPSHOT.jar" ]; then
-    echo "Building Spring Boot application..."
-    ./mvnw clean package -DskipTests
+# Build the application using Gradle if needed
+if [ ! -f "build/libs/verifiable-credentials-backend-0.0.1-SNAPSHOT.jar" ]; then
+    echo "Building Spring Boot application with Gradle..."
+    ./gradlew clean build -x test
 fi
 
 echo "Starting Spring Boot W3C Verifiable Credentials Backend..."
@@ -23,4 +23,4 @@ echo "Java Version: $(java -version 2>&1 | head -1)"
 echo "Working Directory: $(pwd)"
 
 # Run the Spring Boot application
-java -jar target/verifiable-credentials-backend-0.0.1-SNAPSHOT.jar
+java -jar build/libs/verifiable-credentials-backend-0.0.1-SNAPSHOT.jar
